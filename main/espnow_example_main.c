@@ -217,6 +217,26 @@ void app_main(void)
     wifi_init_as_station_with_channel();
 
     ESP_ERROR_CHECK(esp_now_init());
+
+    /* Add Broadcast Peer*/
+     esp_now_peer_info_t peer = {0};
+    memset(&peer, 0, sizeof(esp_now_peer_info_t));
+    if (!esp_now_is_peer_exist(broadcast_mac)) {
+        memcpy(peer.peer_addr, broadcast_mac, ESP_NOW_ETH_ALEN);
+
+        peer.channel = WIFI_CHANNEL;       // same as Wi-Fi channel
+        peer.ifidx   = ESPNOW_WIFI_IF;       // usually ESP_IF_WIFI_STA
+        peer.encrypt = false;                // no encryption for testing
+
+        esp_err_t add_status = esp_now_add_peer(&peer);
+        if (add_status == ESP_ERR_ESPNOW_EXIST) {
+            ESP_LOGW(TAG, "Broadcast peer already exists");
+        } else if (add_status != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to add broadcast peer: %s", esp_err_to_name(add_status));
+        } else {
+            ESP_LOGI(TAG, "Broadcast peer added");
+        }
+    }
     ESP_ERROR_CHECK(esp_now_register_recv_cb(on_recv_cb));
     /* v5-style send-cb */
     ESP_ERROR_CHECK(esp_now_register_send_cb(on_send_cb));
