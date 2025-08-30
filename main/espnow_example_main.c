@@ -156,6 +156,21 @@ static void led_task(void *arg)
     }
 }
 
+/* set max TX power to 20 dBm (80 * 0.25 dBm = 20 dBm) */
+void set_max_tx_power_20dbm(void)
+{
+    int8_t power = 80; // 80 * 0.25dBm = 20dBm
+    esp_err_t rc = esp_wifi_set_max_tx_power(power);
+    if (rc != ESP_OK) {
+        ESP_LOGW(TAG, "esp_wifi_set_max_tx_power failed: %s", esp_err_to_name(rc));
+    } else {
+        int8_t cur;
+        if (esp_wifi_get_max_tx_power(&cur) == ESP_OK) {
+            ESP_LOGI(TAG, "Max TX power set to %d (0.25 dBm units) -> ~%.2fdBm",
+                     cur, cur * 0.25f);
+        }
+    }
+}
 /* --- Initialization --- */
 static void wifi_init_as_station_with_channel(void)
 {
@@ -167,6 +182,7 @@ static void wifi_init_as_station_with_channel(void)
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
+    set_max_tx_power_20dbm();
 
     /* force channel for ESP-NOW */
     ESP_ERROR_CHECK(esp_wifi_set_channel(WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE));
